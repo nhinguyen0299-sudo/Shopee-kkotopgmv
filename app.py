@@ -229,11 +229,22 @@ def process():
         for f in files:
             try:
                 # Read only needed columns to save memory
-                df_peek = pd.read_csv(f, low_memory=False, encoding='utf-8-sig', nrows=1)
+                # Try multiple encodings
+                df_peek = None
+                for enc in ['utf-8-sig', 'utf-8', 'cp1252', 'latin1']:
+                    try:
+                        df_peek = pd.read_csv(f, low_memory=False, encoding=enc, nrows=1)
+                        encoding_used = enc
+                        break
+                    except Exception:
+                        f.seek(0)
+                        continue
+                if df_peek is None: continue
                 if df_peek.shape[1] < 5: continue
                 if 'Tên tài khoản KOL' not in df_peek.columns: continue
                 available_cols = [c for c in NEEDED_COLS if c in df_peek.columns]
-                df = pd.read_csv(f, low_memory=False, encoding='utf-8-sig', usecols=available_cols)
+                f.seek(0)
+                df = pd.read_csv(f, low_memory=False, encoding=encoding_used, usecols=available_cols)
                 dfs.append(df)
             except Exception:
                 continue
