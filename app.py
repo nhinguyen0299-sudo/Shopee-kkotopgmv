@@ -220,12 +220,20 @@ def process():
         if not files:
             return jsonify({'error': 'Không có file nào được upload'}), 400
 
+        NEEDED_COLS = [
+            'Tên tài khoản KOL', 'Thời gian đặt hàng', 'Tên Shop', 'ID Shop',
+            'Tên sản phẩm', 'Mã sản phẩm', 'Danh mục sản phẩm cấp 1',
+            'Giá trị mua hàng(₫)', 'Tỷ lệ hoa hồng người bán'
+        ]
         dfs = []
         for f in files:
             try:
-                df = pd.read_csv(f, low_memory=False, encoding='utf-8-sig')
-                if df.shape[1] < 5: continue
-                if 'Tên tài khoản KOL' not in df.columns: continue
+                # Read only needed columns to save memory
+                df_peek = pd.read_csv(f, low_memory=False, encoding='utf-8-sig', nrows=1)
+                if df_peek.shape[1] < 5: continue
+                if 'Tên tài khoản KOL' not in df_peek.columns: continue
+                available_cols = [c for c in NEEDED_COLS if c in df_peek.columns]
+                df = pd.read_csv(f, low_memory=False, encoding='utf-8-sig', usecols=available_cols)
                 dfs.append(df)
             except Exception:
                 continue
