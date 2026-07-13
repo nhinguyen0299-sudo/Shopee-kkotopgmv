@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*", allow_headers=["Content-Type"], methods=["GET", "POST", "OPTIONS"])
 
 KAKAO = ['kakaonline2','kakaonline3','kakaonline4','kakaonline7','kakaonline8']
 DARK="1F3864"; MID="2F5496"; LIGHT="D6E4F7"; WHITE="FFFFFF"; GRAY="F2F5FA"
