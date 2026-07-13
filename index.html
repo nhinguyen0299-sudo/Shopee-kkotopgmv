@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KakaOnline — Top GMV Dashboard</title>
+<style>
+  :root {
+    --navy: #1F3864; --blue: #2F5496; --sky: #D6E4F7;
+    --gold: #F4A020; --white: #FFFFFF; --bg: #F0F4FA;
+    --border: #D0DAE8; --text: #1a2340; --muted: #6B7A99;
+    --green: #27AE60; --red: #E74C3C; --stripe: #F5F8FD;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--navy); padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(31,56,100,0.18);
+  }
+  header h1 { color: var(--white); font-size: 18px; font-weight: 700; }
+  header span { color: rgba(255,255,255,0.55); font-size: 12px; }
+
+  .main { max-width: 860px; margin: 60px auto; padding: 0 24px; }
+
+  .card {
+    background: var(--white); border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(31,56,100,0.10);
+    padding: 40px; text-align: center;
+  }
+  .card .icon { font-size: 56px; margin-bottom: 16px; }
+  .card h2 { font-size: 20px; color: var(--navy); margin-bottom: 8px; font-weight: 700; }
+  .card p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+
+  #dropzone {
+    border: 2.5px dashed var(--blue); border-radius: 12px;
+    background: var(--bg); padding: 36px 24px;
+    cursor: pointer; transition: all 0.2s; position: relative; margin-bottom: 20px;
+  }
+  #dropzone.drag-over { background: var(--sky); border-color: var(--gold); }
+  #dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  #dropzone p { font-size: 14px; color: var(--blue); font-weight: 600; margin: 0; }
+  #dropzone small { color: var(--muted); font-size: 12px; }
+
+  .file-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; }
+  .file-tag {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--sky); border: 1px solid var(--blue);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--navy); font-weight: 500;
+  }
+  .file-tag .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .file-tag .rm { cursor: pointer; color: var(--muted); margin-left: 4px; }
+  .file-tag .rm:hover { color: var(--red); }
+
+  #btn-process {
+    background: var(--navy); color: var(--white);
+    border: none; border-radius: 10px; padding: 14px 36px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: background 0.15s; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  #btn-process:hover:not(:disabled) { background: var(--blue); }
+  #btn-process:disabled { background: #aaa; cursor: not-allowed; }
+
+  .status {
+    margin-top: 20px; padding: 12px 18px; border-radius: 8px;
+    font-size: 14px; font-weight: 500; display: none;
+    align-items: center; gap: 10px;
+  }
+  .status.info    { background: var(--sky); color: var(--blue); border-left: 4px solid var(--blue); }
+  .status.success { background: #e8f8ef; color: #1a7a40; border-left: 4px solid var(--green); }
+  .status.error   { background: #fde8e8; color: var(--red); border-left: 4px solid var(--red); }
+
+  .spinner {
+    width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .steps {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px;
+  }
+  .step {
+    background: var(--bg); border-radius: 10px; padding: 16px;
+    text-align: center; border: 1px solid var(--border);
+  }
+  .step .num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--blue); color: white;
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;
+  }
+  .step h4 { font-size: 13px; color: var(--navy); margin-bottom: 4px; }
+  .step p  { font-size: 12px; color: var(--muted); margin: 0; }
+
+  /* Config note */
+  .config-note {
+    background: #fff8e1; border: 1px solid #f0c040; border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #7a5a00;
+    text-align: left;
+  }
+  .config-note code {
+    background: #f0e0a0; border-radius: 4px; padding: 2px 6px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 KakaOnline — Top GMV Dashboard</h1>
+  <span>Upload CSV → Nhận file Excel tự động</span>
+</header>
+
+<div class="main">
+  <div class="card">
+    <div class="icon">🚀</div>
+    <h2>Tạo file Top 500 GMV tự động</h2>
+    <p>Upload 5 file CSV của 5 kênh KakaOnline → nhận ngay file Excel đầy đủ với Dashboard, dropdown chọn kênh & tháng</p>
+
+    <div class="config-note" id="config-note">
+      ⚙️ <strong>Lần đầu setup:</strong> Thay <code>YOUR_BACKEND_URL</code> trong file này bằng URL Render của bạn sau khi deploy
+    </div>
+
+    <div id="dropzone">
+      <input type="file" id="file-input" multiple accept=".csv">
+      <p>📂 Kéo thả file CSV vào đây hoặc click để chọn</p>
+      <small>Chọn cùng lúc nhiều file — app tự nhận diện kênh</small>
+    </div>
+
+    <div class="file-tags" id="file-tags"></div>
+
+    <button id="btn-process" disabled>
+      <span class="spinner" id="spinner"></span>
+      <span id="btn-text">⬇ Chọn file CSV trước</span>
+    </button>
+
+    <div class="status" id="status"></div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h4>Upload CSV</h4>
+        <p>Kéo thả 5 file CSV của 5 kênh vào ô trên</p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h4>Xử lý tự động</h4>
+        <p>Server tổng hợp GMV, tính hoa hồng, tạo Excel</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h4>Tải về dùng</h4>
+        <p>File Excel với Dashboard + dropdown kênh & tháng</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ⚠️ THAY URL NÀY SAU KHI DEPLOY LÊN RENDER
+const BACKEND_URL = 'https://shopee-kkotopgmv.onrender.com';
+
+const KAKAO = ['kakaonline2','kakaonline3','kakaonline4','kakaonline7','kakaonline8'];
+const TAB_COLORS = {
+  kakaonline2:'#E74C3C', kakaonline3:'#E67E22',
+  kakaonline4:'#27AE60', kakaonline7:'#2980B9', kakaonline8:'#8E44AD'
+};
+
+let selectedFiles = [];
+
+// Hide config note if URL already set
+if (BACKEND_URL !== 'YOUR_BACKEND_URL') {
+  document.getElementById('config-note').style.display = 'none';
+}
+
+// ── Drag & Drop ─────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('file-input');
+
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); addFiles([...e.dataTransfer.files]); });
+fi.addEventListener('change', () => { addFiles([...fi.files]); fi.value=''; });
+
+function addFiles(files) {
+  files.filter(f => f.name.endsWith('.csv')).forEach(f => {
+    if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+  });
+  renderTags();
+}
+
+function removeFile(name) {
+  selectedFiles = selectedFiles.filter(f => f.name !== name);
+  renderTags();
+}
+
+function renderTags() {
+  const wrap = document.getElementById('file-tags');
+  wrap.innerHTML = selectedFiles.map(f => {
+    // Try to detect channel from filename (rough guess) or just show name
+    const ch = KAKAO.find(k => f.name.toLowerCase().includes(k)) || '?';
+    const color = TAB_COLORS[ch] || '#999';
+    return `<div class="file-tag">
+      <span class="dot" style="background:${color}"></span>
+      <span>${f.name}</span>
+      <span class="rm" onclick="removeFile('${f.name}')">×</span>
+    </div>`;
+  }).join('');
+
+  const btn = document.getElementById('btn-process');
+  const btnText = document.getElementById('btn-text');
+  if (selectedFiles.length > 0) {
+    btn.disabled = false;
+    btnText.textContent = `⬇ Tạo file Excel (${selectedFiles.length} file CSV)`;
+  } else {
+    btn.disabled = true;
+    btnText.textContent = '⬇ Chọn file CSV trước';
+  }
+}
+
+// ── Process ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-process').addEventListener('click', async () => {
+  if (!selectedFiles.length) return;
+
+  if (BACKEND_URL === 'YOUR_BACKEND_URL') {
+    showStatus('⚠️ Bạn chưa cấu hình URL backend. Vui lòng deploy lên Render và cập nhật BACKEND_URL trong file HTML này.', 'error');
+    return;
+  }
+
+  setLoading(true);
+  showStatus('⏳ Đang xử lý... Render cold start có thể mất 30-60 giây lần đầu', 'info');
+
+  try {
+    const formData = new FormData();
+    selectedFiles.forEach(f => formData.append('files', f));
+
+    const res = await fetch(`${BACKEND_URL}/process`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Lỗi server');
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    // Get filename from header
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : 'Top_GMV_KakaOnline.xlsx';
+
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+
+    showStatus(`✅ Tải file thành công! File Excel đã được lưu về máy.`, 'success');
+  } catch (err) {
+    showStatus(`❌ Lỗi: ${err.message}`, 'error');
+  } finally {
+    setLoading(false);
+  }
+});
+
+function setLoading(loading) {
+  const btn = document.getElementById('btn-process');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btn-text');
+  btn.disabled = loading;
+  spinner.style.display = loading ? 'block' : 'none';
+  btnText.textContent = loading ? 'Đang xử lý...' : `⬇ Tạo file Excel (${selectedFiles.length} file CSV)`;
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = `status ${type}`;
+  el.style.display = 'flex';
+}
+</script>
+</body>
+</html>
