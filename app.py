@@ -59,8 +59,14 @@ def build_excel(df_all, months):
                 thang,shop,sid_,tensp,masp_,nganh,gmv,hh = row
             else:
                 thang,shop,sid_,nganh,tensp,masp_,gmv,hh = row
-            sid  = str(int(sid_))  if pd.notna(sid_)  else ''
-            masp = str(int(masp_)) if pd.notna(masp_) else ''
+            try:
+                sid = str(int(float(sid_))) if pd.notna(sid_) else ''
+            except (ValueError, TypeError):
+                sid = str(sid_) if pd.notna(sid_) else ''
+            try:
+                masp = str(int(float(masp_))) if pd.notna(masp_) else ''
+            except (ValueError, TypeError):
+                masp = str(masp_) if pd.notna(masp_) else ''
             link = f'https://shopee.vn/product/{sid}/{masp}' if sid and masp else ''
             rank = ri - 1
             bg = "FFD700" if rank==1 else "E8E8E8" if rank==2 else "CDAA7D" if rank==3 else (LIGHT if rank%2==0 else WHITE)
